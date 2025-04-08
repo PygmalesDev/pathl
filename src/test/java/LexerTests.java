@@ -8,42 +8,56 @@ import java.util.List;
 import static net.pygmales.lexer.TokenType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Lexer tests")
 public class LexerTests {
-    public final Lexer lexer = new Lexer();
 
     @Test
     @DisplayName("Empty input")
     public void testEmptyInput() {
-        this.lexer.setSource("");
-        assertEquals(List.of(Token.EOF), this.lexer.scanTokens());
+        Lexer lexer = new Lexer("");
+        assertEquals(List.of(Token.EOF), lexer.scanTokens());
+    }
+
+    @Test
+    @DisplayName("White spaces")
+    public void testWhiteSpaces() {
+        Lexer lexer = new Lexer("       \t\n         \n");
+        assertEquals(List.of(Token.EOF), lexer.scanTokens());
+    }
+
+    @Test
+    @DisplayName("Single letter identifier")
+    public void testTokenizeSingleLetter() {
+        Lexer lexer = new Lexer("a");
+        assertEquals(List.of(new Token(IDENTIFIER, "a", null), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Identifiers tokenizing")
     public void testTokenizeIdentifier() {
-        this.lexer.setSource("oneInteger");
-        assertEquals(List.of(new Token(IDENTIFIER, "oneInteger", null), Token.EOF), this.lexer.scanTokens());
+        Lexer lexer = new Lexer("oneInteger");
+        assertEquals(List.of(new Token(IDENTIFIER, "oneInteger", null), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Identifier with digits tokenizing")
     public void testIdentifierWithDigits() {
-        this.lexer.setSource("integer32");
-        assertEquals(List.of(new Token(IDENTIFIER, "integer32", null), Token.EOF), this.lexer.scanTokens());
+        Lexer lexer = new Lexer("integer32");
+        assertEquals(List.of(new Token(IDENTIFIER, "integer32", null), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Numbers tokenizing")
     public void testTokenizeNumber() {
-        this.lexer.setSource("365");
-        assertEquals(List.of(new Token(NUMBER, "365", null), Token.EOF), this.lexer.scanTokens());
+        Lexer lexer = new Lexer("365");
+        assertEquals(List.of(new Token(NUMBER, "365", null), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Keywords tokenizing")
     public void testTokenizeKeywords() {
-        this.lexer.setSource("if else while true false and or this let def null return print super");
-        List<Token> tokens = this.lexer.scanTokens();
+        Lexer lexer = new Lexer("if else while true false and or this let def null return print super");
+        List<Token> tokens = lexer.scanTokens();
         assertEquals(List.of(
                 IF, ELSE, WHILE, TRUE, FALSE,
                 AND, OR, THIS, LET, DEF, NULL,
@@ -54,8 +68,8 @@ public class LexerTests {
     @Test
     @DisplayName("Symbols tokenizing")
     public void testTokenizeSymbols() {
-        this.lexer.setSource("! != < > <= >= { } ( ) ; * + - = == / . ,");
-        List<Token> tokens = this.lexer.scanTokens();
+        Lexer lexer = new Lexer("! != < > <= >= { } ( ) ; * + - = == / . ,");
+        List<Token> tokens = lexer.scanTokens();
         assertEquals(List.of(
                 NOT, NOT_EQUAL, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL,
                 LBRAC, RBRAC, LPAR, RPAR, SEMICOLON, STAR, PLUS, MINUS,
@@ -64,10 +78,18 @@ public class LexerTests {
     }
 
     @Test
+    @DisplayName("Concatenated symbols")
+    public void testConcatenatedSymbols() {
+        Lexer lexer = new Lexer("(){}");
+        assertEquals(List.of(LPAR, RPAR, LBRAC, RBRAC, EOF),
+                lexer.scanTokens().stream().map(Token::type).toList());
+    }
+
+    @Test
     @DisplayName("Strings tokenizing")
     public void testTokenizeStrings() {
-        this.lexer.setSource("\"string\" \"string with empty spaces\"");
-        List<Token> tokens = this.lexer.scanTokens();
+        Lexer lexer = new Lexer("\"string\" \"string with empty spaces\"");
+        List<Token> tokens = lexer.scanTokens();
         assertEquals(List.of(
                 new Token(STRING, "string", null),
                 new Token(STRING, "string with empty spaces", null),
@@ -77,7 +99,7 @@ public class LexerTests {
     @Test
     @DisplayName("Long expression")
     public void testTokenizeExpression() {
-        this.lexer.setSource(
+        Lexer lexer = new Lexer(
         """
         class Breaker {
             break() {}
@@ -96,7 +118,7 @@ public class LexerTests {
             }
         }
         """);
-        List<Token> tokens = this.lexer.scanTokens();
+        List<Token> tokens = lexer.scanTokens();
         assertEquals(List.of(
                 CLASS, IDENTIFIER, LBRAC,
                 IDENTIFIER, LPAR, RPAR, LBRAC, RBRAC, RBRAC,

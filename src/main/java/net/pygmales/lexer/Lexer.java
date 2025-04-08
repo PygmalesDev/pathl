@@ -13,19 +13,19 @@ public class Lexer {
 
     private String source;
     private char currentChar;
-    private int sourceSize;
     private int pos;
 
-    public Lexer() {}
+    public Lexer() {
+        this("");
+    }
 
     public Lexer(String source) {
         this.source = source;
-        this.sourceSize = source.length()-1;
         if (!source.isEmpty()) this.currentChar = source.charAt(0);
     }
 
     public List<Token> scanTokens() {
-        while (this.pos < this.sourceSize)
+        while (this.pos < this.source.length())
             this.scanNextToken();
 
         this.tokens.add(Token.EOF);
@@ -48,13 +48,15 @@ public class Lexer {
     }
 
     private void addSymbolicToken() {
+        if (this.currentChar == '\0') return;
+
         char letter = this.currentChar;
         this.next();
-        char next = (letter != '\n') ? this.currentChar : ' ';
-        boolean isDoubleToken = next == '=';
-        String lexeme = isDoubleToken ? String.format("%c%c", letter, next) : String.valueOf(letter);
+        char nextChar = (this.currentChar != '\0') ? this.currentChar : ' ';
+        boolean isDoubleToken = nextChar == '=';
+        String lexeme = isDoubleToken ? String.format("%c%c", letter, nextChar) : String.valueOf(letter);
         if (isDoubleToken) this.next();
-        this.tokens.add(new Token(this.tokenMap.getOrDefault(lexeme, EOF), lexeme, null));
+        this.tokens.add(new Token(this.tokenMap.getOrDefault(lexeme, UNKNOWN), lexeme, null));
     }
 
     private void addKeywordToken() {
@@ -98,14 +100,14 @@ public class Lexer {
     }
 
     public void setSource(String source) {
+        this.tokens.clear();
         this.source = source;
-        this.sourceSize = source.length()-1;
         if (!source.isEmpty()) this.currentChar = source.charAt(0);
         this.pos = 0;
     }
 
     private void next() {
-        if (++this.pos == this.source.length()) this.currentChar = '\0';
+        if (++this.pos >= this.source.length()) this.currentChar = '\0';
         else this.currentChar = this.source.charAt(this.pos);
     }
 }

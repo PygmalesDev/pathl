@@ -1,7 +1,6 @@
 package net.pygmales.interpreter;
 
 import net.pygmales.lexer.Lexer;
-import net.pygmales.lexer.Token;
 
 import java.io.BufferedReader;
 import java.io.IOException;
