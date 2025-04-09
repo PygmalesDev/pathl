@@ -21,7 +21,7 @@ public enum TokenType {
     FOR("for"), IF("if"), NULL("null"), OR("or"), PRINT("print"), RETURN("return"),
     SUPER("super"), THIS("this"), TRUE("true"), LET("let"), WHILE("while"),
 
-    EOF("eof"), UNKNOWN("unknown"), UMC("umc");
+    EOF("eof"), UNKNOWN("unknown"), UMC_ERROR("umc"), US_ERROR("us");
 
     private final String str;
 

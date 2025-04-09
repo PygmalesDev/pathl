@@ -44,8 +44,11 @@ public class Lexer {
         if (this.tokens.isEmpty()) return;
 
         Token token = this.tokens.getLast();
-        if (token.type().equals(UNKNOWN)) this.logger.unexpectedToken(token);
-        if (token.type().equals(UMC)) this.logger.unclosedComment(token);
+        switch (token.type()) {
+            case UNKNOWN -> this.logger.unexpectedToken(token);
+            case UMC_ERROR -> this.logger.unclosedComment(token);
+            case US_ERROR -> this.logger.unclosedString(token);
+        }
     }
     
     private void scanNextToken() {
@@ -59,14 +62,16 @@ public class Lexer {
     }
 
     private void addSlashTokenOrSkipComment() {
+        int commentStart = this.column;
+
         next();
         if (this.isSlash()) this.getLexeme(() -> !this.isEof() && !this.isNewLine());
         else if (this.isStar()) {
             next();
-            String commentStartLine = String.valueOf(this.line);
+            int commentStartLine = this.line;
             for (; !this.isMultilineCommentEnd(); next()) {
                 if (this.isEof()) {
-                    this.addToken(UMC, commentStartLine);
+                    this.addToken(new Token(UMC_ERROR, "", null, commentStartLine, commentStart));
                     return;
                 }
             }
@@ -75,26 +80,37 @@ public class Lexer {
     }
 
     private void addStringToken() {
+        int stringStart = this.column;
         this.next();
-        this.addToken(STRING, this.getLexeme(() -> !isQuotes()));
+        int stringStartLine = this.line;
+        for (; !this.isQuotes(); next()) {
+            if (this.isEof() || this.isNewLine()) {
+                this.addToken(new Token(US_ERROR, "", null, stringStartLine, stringStart));
+                return;
+            }
+        }
+
+        this.addToken(STRING, this.source.substring(stringStart, this.pos));
         this.next();
     }
 
     private void addSymbolicToken() {
         if (this.isEof()) return;
 
+        int tokenStart = this.column;
         char letter = this.currentChar;
         this.next();
         char nextChar = (this.isEof()) ? '\0' : this.currentChar;
         boolean isDoubleToken = nextChar == '=';
         String lexeme = isDoubleToken ? String.format("%c%c", letter, nextChar) : String.valueOf(letter);
         if (isDoubleToken) this.next();
-        this.addToken(this.tokenMap.getOrDefault(lexeme, UNKNOWN), lexeme);
+        this.addToken(new Token(this.tokenMap.getOrDefault(lexeme, UNKNOWN), lexeme, null, this.line, tokenStart));
     }
 
     private void addKeywordToken() {
+        int keywordStart = this.column;
         String lexeme = this.getLexeme(() -> isLetter() || isDigit() || isUnderscore());
-        this.addToken(this.tokenMap.getOrDefault(lexeme, IDENTIFIER), lexeme);
+        this.addToken(new Token(this.tokenMap.getOrDefault(lexeme, IDENTIFIER), lexeme, null, this.line, keywordStart));
     }
 
     private void addNumericalToken() {
@@ -143,6 +159,10 @@ public class Lexer {
 
     private void skipWhitespaces() {
         while (this.isWhitespace()) this.next();
+    }
+
+    private void addToken(Token token) {
+        this.tokens.add(token);
     }
 
     private void addToken(TokenType type, String lexeme) {

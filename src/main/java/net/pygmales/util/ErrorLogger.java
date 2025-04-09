@@ -12,48 +12,61 @@ public class ErrorLogger {
         this.sourceLines = source.split("\n");
     }
 
+    public void unclosedString(Token token) {
+        this.printError(token,
+                "unclosed string literal",
+                "string literal started here and was not closed with `\"`"
+        );
+    }
+
     public void unclosedComment(Token token) {
-        int lineNum = Integer.parseInt(token.lexeme());
-        String line = this.sourceLines[lineNum-1];
-        int lexemePos = line.indexOf("/*");
-        int trimmedLexemePos = line.trim().indexOf("/*");
-
-        if (this.errorCount == 0) System.out.println(red("┓"));
-        System.out.print(red("┃ "));
-        System.out.printf("%s %s\n", red("error:"), white("unclosed multiline comment!"));
-        System.out.print(red("┣━ "));
-        System.out.printf("in file \"%s\" at %d:%d\n", this.filename, lineNum, lexemePos);
-        System.out.println(red("┃"));
-
-        System.out.printf("%s\t%s\n", red("┣━━━▶"), line.trim());
-        System.out.println(red(String.format("┃\t\t%s▲ multiline comment started here and was not closed with `*/`",
-                " ".repeat(trimmedLexemePos))));
-        System.out.println(red("┃"));
-        this.errorCount++;
+        this.printError(token,
+                "unclosed multiline comment",
+                "multiline comment started here and was not closed with `*/`"
+        );
     }
 
     public void unexpectedToken(Token token) {
-        int lineNum = token.line();
-        int lexemePos = token.column();
-        String line = this.sourceLines[lineNum-1];
-        String lexeme = token.lexeme();
+        this.printError(token,
+                String.format("unexpected token `%s`", token.lexeme()),
+                String.format("no rules defined for the token `%s`", token.lexeme())
+        );
+    }
 
-        if (this.errorCount == 0) System.out.println(red("┓"));
-        System.out.print(red("┃ "));
-        System.out.printf("%s %s\n", red("error:"),
-                white(String.format("unexpected token `%s`!", lexeme)));
-        System.out.print(red("┣━ "));
-        System.out.printf("in file \"%s\" at %d:%d\n", this.filename, lineNum, lexemePos);
-        System.out.println(red("┃"));
-        System.out.printf("%s\t%s\n", red("┣━━━▶"), line.trim());
-        System.out.println(red(String.format("┃\t\t%s▲ no rules defined for the token `%s`", " ".repeat(lexemePos-2), lexeme)));
-        System.out.println(red("┃"));
+    private void printError(Token token, String errorName, String errorDescription) {
+        String line = this.sourceLines[token.line()-1];
+        int tokenPos = token.column() - (line.length() - line.stripLeading().length()) - 1;
+        if (token.line() > 1) tokenPos--;
+
+        this.printOpener();
+        this.printLine();
+        System.out.printf("%s %s\n", red("error:"), white(errorName+"!"));
+        this.printErrorPosition(line, token.line(), token.column());
+        System.out.println(red(String.format("┃\t\t%s▲ %s",
+                " ".repeat(tokenPos), errorDescription)));
+        this.printLine();
+        System.out.println();
+
         this.errorCount++;
     }
 
+    private void printErrorPosition(String line, int lineNum, int column) {
+        System.out.print(red("┣━ "));
+        System.out.printf("in file \"%s\" at %d:%d\n", this.filename, lineNum, column);
+        System.out.println(red("┃"));
+        System.out.printf("%s\t%s\n", red("┣━━━▶"), line.trim());
+    }
+
+    private void printLine() {
+        System.out.print(red("┃ "));
+    }
+
+    private void printOpener() {
+        if (this.errorCount == 0) System.out.println(red("┓"));
+    }
+
     public void close() {
-        if (this.errorCount > 0)
-            System.out.println(red("┛\n"));
+        if (this.errorCount > 0) System.out.println(red("┛\n"));
     }
 
     private static String white(Object o) {
@@ -63,4 +76,5 @@ public class ErrorLogger {
     private static String red(Object o) {
         return String.format("\033[1;91m%s\033[0m", o.toString());
     }
+
 }
