@@ -3,9 +3,11 @@ package net.pygmales.lexer;
 public record Token(
         TokenType type,
         String lexeme,
-        Object literal
+        Object literal,
+        int line,
+        int column
 ) {
-    public static final Token EOF = new Token(TokenType.EOF, "", null);
+    public static final Token EOF = new Token(TokenType.EOF, "", null, -1, -1);
 
     @Override
     public String toString() {

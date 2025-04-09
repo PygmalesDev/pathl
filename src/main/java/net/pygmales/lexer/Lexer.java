@@ -17,7 +17,8 @@ public class Lexer {
 
     private char currentChar;
     private int pos;
-    private int line;
+    private int column = 1;
+    private int line = 1;
 
     public Lexer(String source) {
         this("nil.ptl", source);
@@ -34,8 +35,8 @@ public class Lexer {
             this.scanNextToken();
             this.isFaultyToken();
         }
-
         this.tokens.add(Token.EOF);
+        this.logger.close();
         return this.tokens;
     }
 
@@ -43,7 +44,8 @@ public class Lexer {
         if (this.tokens.isEmpty()) return;
 
         Token token = this.tokens.getLast();
-        if (token.type().equals(UNKNOWN)) this.logger.unexpectedToken(token, this.line);
+        if (token.type().equals(UNKNOWN)) this.logger.unexpectedToken(token);
+        if (token.type().equals(UMC)) this.logger.unclosedComment(token);
     }
     
     private void scanNextToken() {
@@ -60,14 +62,21 @@ public class Lexer {
         next();
         if (this.isSlash()) this.getLexeme(() -> !this.isEof() && !this.isNewLine());
         else if (this.isStar()) {
-            this.getLexeme(() -> !this.isEof() && !this.isMultilineCommentEnd());
+            next();
+            String commentStartLine = String.valueOf(this.line);
+            for (; !this.isMultilineCommentEnd(); next()) {
+                if (this.isEof()) {
+                    this.addToken(UMC, commentStartLine);
+                    return;
+                }
+            }
             this.getLexeme(() -> !this.isEof() && !this.isNewLine());
-        } else this.tokens.add(new Token(SLASH, "/", null));
+        } else this.addToken(SLASH, "/");
     }
 
     private void addStringToken() {
         this.next();
-        this.tokens.add(new Token(STRING, this.getLexeme(() -> !isQuotes()), null));
+        this.addToken(STRING, this.getLexeme(() -> !isQuotes()));
         this.next();
     }
 
@@ -80,16 +89,16 @@ public class Lexer {
         boolean isDoubleToken = nextChar == '=';
         String lexeme = isDoubleToken ? String.format("%c%c", letter, nextChar) : String.valueOf(letter);
         if (isDoubleToken) this.next();
-        this.tokens.add(new Token(this.tokenMap.getOrDefault(lexeme, UNKNOWN), lexeme, null));
+        this.addToken(this.tokenMap.getOrDefault(lexeme, UNKNOWN), lexeme);
     }
 
     private void addKeywordToken() {
         String lexeme = this.getLexeme(() -> isLetter() || isDigit() || isUnderscore());
-        this.tokens.add(new Token(this.tokenMap.getOrDefault(lexeme, IDENTIFIER), lexeme, null));
+        this.addToken(this.tokenMap.getOrDefault(lexeme, IDENTIFIER), lexeme);
     }
 
     private void addNumericalToken() {
-        this.tokens.add(new Token(NUMBER, this.getLexeme(this::isDigit), null));
+        this.addToken(NUMBER, this.getLexeme(this::isDigit));
     }
 
     private boolean isLetter() {
@@ -136,6 +145,9 @@ public class Lexer {
         while (this.isWhitespace()) this.next();
     }
 
+    private void addToken(TokenType type, String lexeme) {
+        this.tokens.add(new Token(type, lexeme, null, this.line, this.column));
+    }
 
     private String getLexeme(Supplier<Boolean> predicate) {
         int start = this.pos;
@@ -145,8 +157,12 @@ public class Lexer {
     }
 
     private void next() {
-        if (this.isNewLine()) this.line++;
+        if (this.isNewLine()) {
+            this.line++;
+            this.column = 1;
+        }
 
+        this.column++;
         if (++this.pos >= this.source.length()) this.currentChar = '\0';
         else this.currentChar = this.source.charAt(this.pos);
     }
