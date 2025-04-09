@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static net.pygmales.lexer.TokenType.*;
+import static net.pygmales.util.Character.*;
 
 public class Lexer {
     private final List<Token> tokens = new ArrayList<>();
@@ -54,111 +55,78 @@ public class Lexer {
     private void scanNextToken() {
         this.skipWhitespaces();
 
-        if      (this.isLetter())    this.addKeywordToken();
-        else if (this.isDigit())     this.addNumericalToken();
-        else if (this.isQuotes())    this.addStringToken();
-        else if (this.isSlash())     this.addSlashTokenOrSkipComment();
-        else                         this.addSymbolicToken();
+        if      (isLetter(this.getChar())) this.addKeywordToken();
+        else if (isDigit(this.getChar()))  this.addNumericalToken();
+        else if (isQuotes(this.getChar())) this.addStringToken();
+        else if (isSlash(this.getChar()))  this.addSlashTokenOrSkipComment();
+        else                                 this.addSymbolicToken();
     }
 
     private void addSlashTokenOrSkipComment() {
         int commentStart = this.column;
 
-        next();
-        if (this.isSlash()) this.getLexeme(() -> !this.isEof() && !this.isNewLine());
-        else if (this.isStar()) {
-            next();
+        proceed();
+        if (isSlash(this.getChar())) this.getLexeme(() -> !isEof(this.getChar()) && !isNewLine(this.getChar()));
+        else if (isStar(this.getChar())) {
+            proceed();
             int commentStartLine = this.line;
-            for (; !this.isMultilineCommentEnd(); next()) {
-                if (this.isEof()) {
+            for (; !isMultilineCommentEnd(this.getChar(), this.peek()); proceed()) {
+                if (isEof(this.getChar())) {
                     this.addToken(new Token(UMC_ERROR, "", null, commentStartLine, commentStart));
                     return;
                 }
             }
-            this.getLexeme(() -> !this.isEof() && !this.isNewLine());
+            this.getLexeme(() -> !isEof(this.getChar()) && !isNewLine(this.getChar()));
         } else this.addToken(SLASH, "/");
     }
 
     private void addStringToken() {
         int stringStart = this.column;
-        this.next();
+        this.proceed();
         int stringStartLine = this.line;
-        for (; !this.isQuotes(); next()) {
-            if (this.isEof() || this.isNewLine()) {
+        for (; !isQuotes(this.getChar()); proceed()) {
+            if (isEof(this.getChar()) || isNewLine(this.getChar())) {
                 this.addToken(new Token(US_ERROR, "", null, stringStartLine, stringStart));
                 return;
             }
         }
 
         this.addToken(STRING, this.source.substring(stringStart, this.pos));
-        this.next();
+        this.proceed();
     }
 
     private void addSymbolicToken() {
-        if (this.isEof()) return;
+        if (isEof(this.getChar())) return;
 
         int tokenStart = this.column;
-        char letter = this.currentChar;
-        this.next();
-        char nextChar = (this.isEof()) ? '\0' : this.currentChar;
+        char letter = this.getChar();
+        this.proceed();
+        char nextChar = (isEof(this.getChar())) ? '\0' : this.getChar();
         boolean isDoubleToken = nextChar == '=';
         String lexeme = isDoubleToken ? String.format("%c%c", letter, nextChar) : String.valueOf(letter);
-        if (isDoubleToken) this.next();
+        if (isDoubleToken) this.proceed();
         this.addToken(new Token(this.tokenMap.getOrDefault(lexeme, UNKNOWN), lexeme, null, this.line, tokenStart));
     }
 
     private void addKeywordToken() {
         int keywordStart = this.column;
-        String lexeme = this.getLexeme(() -> isLetter() || isDigit() || isUnderscore());
+        String lexeme = this.getLexeme(() -> isLetter(this.getChar()) || isDigit(this.getChar()) || isUnderscore(this.getChar()));
         this.addToken(new Token(this.tokenMap.getOrDefault(lexeme, IDENTIFIER), lexeme, null, this.line, keywordStart));
     }
 
     private void addNumericalToken() {
-        this.addToken(NUMBER, this.getLexeme(this::isDigit));
-    }
-
-    private boolean isLetter() {
-        return Character.isLetter(this.currentChar);
-    }
-
-    private boolean isDigit() {
-        return Character.isDigit(this.currentChar);
-    }
-
-    private boolean isWhitespace() {
-        return Character.isWhitespace(this.currentChar);
-    }
-
-    private boolean isSlash() {
-        return this.currentChar == '/';
-    }
-
-    private boolean isQuotes() {
-        return this.currentChar == '"';
-    }
-
-    private boolean isUnderscore() {
-        return this.currentChar == '_';
-    }
-
-    private boolean isStar() {
-        return this.currentChar == '*';
-    }
-
-    private boolean isNewLine() {
-        return this.currentChar == '\n';
-    }
-
-    private boolean isEof() {
-        return this.currentChar == '\0';
-    }
-
-    private boolean isMultilineCommentEnd() {
-        return this.isStar() && this.source.charAt(this.pos+1) == '/';
+        String lexeme = this.getLexeme(() -> isDigit(this.getChar()));
+        if (isDot(this.getChar())) {
+            if (isDigit(this.peek())) {
+                proceed();
+                lexeme += "." + this.getLexeme(() -> isDigit(this.getChar()));
+            }
+        }
+        this.addToken(NUMBER, lexeme);
     }
 
     private void skipWhitespaces() {
-        while (this.isWhitespace()) this.next();
+        while (isWhitespace(this.getChar())) this.proceed();
     }
 
     private void addToken(Token token) {
@@ -171,19 +139,28 @@ public class Lexer {
 
     private String getLexeme(Supplier<Boolean> predicate) {
         int start = this.pos;
-        while (predicate.get()) this.next();
+        while (predicate.get()) this.proceed();
 
         return this.source.substring(start, this.pos);
     }
 
-    private void next() {
-        if (this.isNewLine()) {
+    private void proceed() {
+        if (isNewLine(this.getChar())) {
             this.line++;
-            this.column = 1;
+            this.column = 0;
         }
 
         this.column++;
         if (++this.pos >= this.source.length()) this.currentChar = '\0';
         else this.currentChar = this.source.charAt(this.pos);
+    }
+
+    private char getChar() {
+        return this.currentChar;
+    }
+
+    private char peek() {
+        if (this.pos+1 < this.source.length()) return this.source.charAt(this.pos+1);
+        return '\0';
     }
 }

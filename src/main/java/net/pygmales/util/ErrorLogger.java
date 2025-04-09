@@ -36,7 +36,6 @@ public class ErrorLogger {
     private void printError(Token token, String errorName, String errorDescription) {
         String line = this.sourceLines[token.line()-1];
         int tokenPos = token.column() - (line.length() - line.stripLeading().length()) - 1;
-        if (token.line() > 1) tokenPos--;
 
         this.printOpener();
         this.printLine();
