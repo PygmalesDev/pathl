@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class LexerErrorTests {
     private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-
+    @BeforeEach
     public void setOutput() {
         System.setOut(new PrintStream(stream));
     }
