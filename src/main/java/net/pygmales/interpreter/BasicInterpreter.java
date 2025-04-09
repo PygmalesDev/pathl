@@ -30,6 +30,7 @@ public class BasicInterpreter implements Interpreter {
             if (Objects.isNull(line) || line.equals("exit")) break;
             run(line);
         }
+        System.out.println("Leaving path interactive...");
     }
 
     private void run(String content) {

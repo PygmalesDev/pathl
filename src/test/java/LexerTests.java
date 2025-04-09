@@ -26,6 +26,31 @@ public class LexerTests {
     }
 
     @Test
+    @DisplayName("Ignore inline comments")
+    public void testIgnoreInlineComments() {
+        Lexer lexer = new Lexer("let a = 3; // this is a comment");
+        List<Token> tokens = lexer.scanTokens();
+        assertEquals(List.of(LET, IDENTIFIER, EQUAL, NUMBER, SEMICOLON, EOF),
+                tokens.stream().map(Token::type).toList());
+    }
+
+    @Test
+    @DisplayName("Ignore multiline comments")
+    public void testIgnoreMultilineComments() {
+        Lexer lexer = new Lexer(
+                """
+                /* simple class to test if the lexer would
+                skip the multiline comments */
+                class Person() {
+                    let a;
+                }
+                """);
+        List<Token> tokens = lexer.scanTokens();
+        assertEquals(List.of(CLASS, IDENTIFIER, LPAR, RPAR, LBRAC, LET, IDENTIFIER, SEMICOLON, RBRAC, EOF),
+                tokens.stream().map(Token::type).toList());
+    }
+
+    @Test
     @DisplayName("Single letter identifier")
     public void testTokenizeSingleLetter() {
         Lexer lexer = new Lexer("a");
@@ -101,19 +126,23 @@ public class LexerTests {
     public void testTokenizeExpression() {
         Lexer lexer = new Lexer(
         """
+        /* breaks something
+           is very evil and smells bad */
         class Breaker {
             break() {}
         }
         
+        // checks something and returns a string
         def hello_world() {
             let br = Breaker();
-            let a = 35;
-            let b = 84;
-            let c = a + b;
+            let a = 35; // variable a
+            let b = 84; // variable b
+            let c = a + b; // variable c
             if (a >= 5) {
                 br.break();
                 return "everything okay";
             } else {
+                // possibly something went wrong here
                 return "something went wrong";
             }
         }

@@ -1,5 +1,7 @@
 package net.pygmales.lexer;
 
+import net.pygmales.util.ErrorLogger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,35 +12,57 @@ import static net.pygmales.lexer.TokenType.*;
 public class Lexer {
     private final List<Token> tokens = new ArrayList<>();
     private final Map<String, TokenType> tokenMap = TokenType.getTokenTypeMap();
+    private final ErrorLogger logger;
+    private final String source;
 
-    private String source;
     private char currentChar;
     private int pos;
-
-    public Lexer() {
-        this("");
-    }
+    private int line;
 
     public Lexer(String source) {
+        this("nil.ptl", source);
+    }
+
+    public Lexer(String fileName, String source) {
         this.source = source;
+        this.logger = new ErrorLogger(fileName, source);
         if (!source.isEmpty()) this.currentChar = source.charAt(0);
     }
 
     public List<Token> scanTokens() {
-        while (this.pos < this.source.length())
+        while (this.pos < this.source.length()) {
             this.scanNextToken();
+            this.isFaultyToken();
+        }
 
         this.tokens.add(Token.EOF);
         return this.tokens;
+    }
+
+    private void isFaultyToken() {
+        if (this.tokens.isEmpty()) return;
+
+        Token token = this.tokens.getLast();
+        if (token.type().equals(UNKNOWN)) this.logger.unexpectedToken(token, this.line);
     }
     
     private void scanNextToken() {
         this.skipWhitespaces();
 
-        if      (this.isLetter()) this.addKeywordToken();
-        else if (this.isDigit())  this.addNumericalToken();
-        else if (this.isQuotes()) this.addStringToken();
-        else                      this.addSymbolicToken();
+        if      (this.isLetter())    this.addKeywordToken();
+        else if (this.isDigit())     this.addNumericalToken();
+        else if (this.isQuotes())    this.addStringToken();
+        else if (this.isSlash())     this.addSlashTokenOrSkipComment();
+        else                         this.addSymbolicToken();
+    }
+
+    private void addSlashTokenOrSkipComment() {
+        next();
+        if (this.isSlash()) this.getLexeme(() -> !this.isEof() && !this.isNewLine());
+        else if (this.isStar()) {
+            this.getLexeme(() -> !this.isEof() && !this.isMultilineCommentEnd());
+            this.getLexeme(() -> !this.isEof() && !this.isNewLine());
+        } else this.tokens.add(new Token(SLASH, "/", null));
     }
 
     private void addStringToken() {
@@ -48,11 +72,11 @@ public class Lexer {
     }
 
     private void addSymbolicToken() {
-        if (this.currentChar == '\0') return;
+        if (this.isEof()) return;
 
         char letter = this.currentChar;
         this.next();
-        char nextChar = (this.currentChar != '\0') ? this.currentChar : ' ';
+        char nextChar = (this.isEof()) ? '\0' : this.currentChar;
         boolean isDoubleToken = nextChar == '=';
         String lexeme = isDoubleToken ? String.format("%c%c", letter, nextChar) : String.valueOf(letter);
         if (isDoubleToken) this.next();
@@ -80,6 +104,10 @@ public class Lexer {
         return Character.isWhitespace(this.currentChar);
     }
 
+    private boolean isSlash() {
+        return this.currentChar == '/';
+    }
+
     private boolean isQuotes() {
         return this.currentChar == '"';
     }
@@ -88,9 +116,26 @@ public class Lexer {
         return this.currentChar == '_';
     }
 
+    private boolean isStar() {
+        return this.currentChar == '*';
+    }
+
+    private boolean isNewLine() {
+        return this.currentChar == '\n';
+    }
+
+    private boolean isEof() {
+        return this.currentChar == '\0';
+    }
+
+    private boolean isMultilineCommentEnd() {
+        return this.isStar() && this.source.charAt(this.pos+1) == '/';
+    }
+
     private void skipWhitespaces() {
         while (this.isWhitespace()) this.next();
     }
+
 
     private String getLexeme(Supplier<Boolean> predicate) {
         int start = this.pos;
@@ -99,14 +144,9 @@ public class Lexer {
         return this.source.substring(start, this.pos);
     }
 
-    public void setSource(String source) {
-        this.tokens.clear();
-        this.source = source;
-        if (!source.isEmpty()) this.currentChar = source.charAt(0);
-        this.pos = 0;
-    }
-
     private void next() {
+        if (this.isNewLine()) this.line++;
+
         if (++this.pos >= this.source.length()) this.currentChar = '\0';
         else this.currentChar = this.source.charAt(this.pos);
     }
