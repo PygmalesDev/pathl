@@ -28,8 +28,8 @@ public class ErrorLogger {
 
     public void unexpectedToken(Token token) {
         this.printError(token,
-                String.format("unexpected token `%s`", token.lexeme()),
-                String.format("no rules defined for the token `%s`", token.lexeme())
+                String.format("unexpected token `%s`", token.literal()),
+                String.format("no rules defined for the token `%s`", token.literal())
         );
     }
 

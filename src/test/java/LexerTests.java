@@ -54,28 +54,28 @@ public class LexerTests {
     @DisplayName("Single letter identifier")
     public void testTokenizeSingleLetter() {
         Lexer lexer = new Lexer("a");
-        assertEquals(List.of(new Token(IDENTIFIER, "a", null, 1, 1), Token.EOF), lexer.scanTokens());
+        assertEquals(List.of(new Token(IDENTIFIER, "a", 1, 1), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Identifiers tokenizing")
     public void testTokenizeIdentifier() {
         Lexer lexer = new Lexer("oneInteger");
-        assertEquals(List.of(new Token(IDENTIFIER, "oneInteger",  null, 1, 1), Token.EOF), lexer.scanTokens());
+        assertEquals(List.of(new Token(IDENTIFIER, "oneInteger",1, 1), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Identifier with digits tokenizing")
     public void testIdentifierWithDigits() {
         Lexer lexer = new Lexer("integer32");
-        assertEquals(List.of(new Token(IDENTIFIER, "integer32", null, 1, 1), Token.EOF), lexer.scanTokens());
+        assertEquals(List.of(new Token(IDENTIFIER, "integer32", 1, 1), Token.EOF), lexer.scanTokens());
     }
 
     @Test
     @DisplayName("Numbers tokenizing")
     public void testTokenizeNumber() {
         Lexer lexer = new Lexer("365");
-        assertEquals(List.of(new Token(NUMBER, "365", null, 1, 1), Token.EOF), lexer.scanTokens());
+        assertEquals(List.of(new Token(NUMBER, 365.0f,1, 1), Token.EOF), lexer.scanTokens());
     }
 
     @Test
@@ -116,8 +116,8 @@ public class LexerTests {
         Lexer lexer = new Lexer("\"string\" \"string with empty spaces\"");
         List<Token> tokens = lexer.scanTokens();
         assertEquals(List.of(
-                new Token(STRING, "string", null, 1, 2),
-                new Token(STRING, "string with empty spaces", null, 1, 9),
+                new Token(STRING, "string",  1, 2),
+                new Token(STRING, "string with empty spaces",  1, 9),
                 Token.EOF), tokens);
     }
 

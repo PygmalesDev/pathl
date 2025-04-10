@@ -2,6 +2,7 @@ package net.pygmales.lexer;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public enum TokenType {
@@ -24,6 +25,12 @@ public enum TokenType {
     EOF("eof"), UNKNOWN("unknown"), UMC_ERROR("umc"), US_ERROR("us");
 
     private final String str;
+
+    public static final List<TokenType> LITERAL_TYPE = List.of(NUMBER, STRING, TRUE, FALSE, NULL);
+    public static final List<TokenType> BINARY_OPERATOR_TYPE = List.of(
+            EQUAL_EQUAL, NOT_EQUAL, LESS, LESS_EQUAL,
+            GREATER, GREATER_EQUAL, PLUS, MINUS, STAR, SLASH);
+    public static final List<TokenType> UNARY_OPERATOR_TYPE = List.of(MINUS, NOT);
 
     TokenType(String str) {
         this.str = str;
