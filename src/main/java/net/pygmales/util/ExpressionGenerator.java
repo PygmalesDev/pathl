@@ -10,36 +10,61 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ExpressionGenerator {
-    private static final Path PATH = Path.of("./src/main/java/net/pygmales/parser/expression/Expression.java");
+    private static final Path EXP_PATH = Path.of("./src/main/java/net/pygmales/parser/expression/Expression.java");
+    private static final Path VISITOR_PATH = Path.of("./src/main/java/net/pygmales/parser/expression/ExpressionVisitor.java");
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         URL schemeUrl = ExpressionGenerator.class.getResource("/scheme.exp");
         if (Objects.isNull(schemeUrl)) System.exit(42);
 
-        Files.createDirectories(PATH.getParent());
-        Files.writeString(PATH, "");
+        Files.createDirectories(EXP_PATH.getParent());
+        Files.writeString(EXP_PATH, "");
+        Files.writeString(VISITOR_PATH, "");
 
         BufferedReader reader = Files.newBufferedReader(Path.of(schemeUrl.toURI()));
-        FileWriter writer = new FileWriter(PATH.toFile());
+        FileWriter exp_writer = new FileWriter(EXP_PATH.toFile());
+        FileWriter visitor_writer = new FileWriter(VISITOR_PATH.toFile());
 
-        addHeaders(writer);
-        writer.write("public interface Expression {\n");
+        addExpressionHeaders(exp_writer);
+        addVisitorHeaders(visitor_writer);
+
+        addExpressionInterfaceFields(exp_writer);
+        visitor_writer.write("public interface ExpressionVisitor<R> {\n");
 
         for (String line : reader.lines().toList()) {
             SchemeParser parser = new SchemeParser(line);
-            addExpressionClass(writer, parser);
-            addExpressionFactory(writer, parser);
+            addVisitMethod(visitor_writer, parser);
+            addExpressionClass(exp_writer, parser);
+            addExpressionFactory(exp_writer, parser);
         }
         reader.close();
 
-        writer.write("}\n");
-        writer.close();
+        exp_writer.write("}\n");
+        visitor_writer.write("}\n");
+
+        visitor_writer.close();
+        exp_writer.close();
     }
 
-    private static void addHeaders(Writer writer) throws IOException {
+    private static void addExpressionInterfaceFields(FileWriter writer) throws IOException {
+        writer.write("public interface Expression {\n");
+        writer.write("\t<R> R accept(ExpressionVisitor<R> visitor);\n\n");
+    }
+
+    private static void addExpressionHeaders(Writer writer) throws IOException {
         writer.write("package net.pygmales.parser.expression;\n\n");
         writer.write("import net.pygmales.lexer.Token;\n");
         writer.write("import static net.pygmales.lexer.TokenType.*;\n\n");
+    }
+
+    private static void addVisitorHeaders(Writer writer) throws IOException {
+        writer.write("package net.pygmales.parser.expression;\n\n");
+        writer.write("import static net.pygmales.parser.expression.Expression.*;\n\n");
+    }
+
+    private static void addVisitMethod(Writer writer, SchemeParser parser) throws IOException {
+        writer.write(String.format("\tR visit%s(%sExpression %s);\n",
+                parser.className, parser.className, parser.className.toLowerCase()));
     }
 
     private static void addExpressionClass(Writer writer, SchemeParser parser) throws IOException {
@@ -53,6 +78,11 @@ public class ExpressionGenerator {
         // Class constructor
         writer.write(String.format("\t\tpublic %sExpression(%s) {\n", parser.className, String.join(", ", parser.fieldTypes)));
         for (String fieldName : parser.fieldNames) writer.write(String.format("\t\t\tthis.%s = %s;\n", fieldName, fieldName));
+        writer.write("\t\t}\n\n");
+
+        // accept() implementation
+        writer.write("\t\t@Override\n\t\tpublic <R> R accept(ExpressionVisitor<R> visitor) {\n");
+        writer.write(String.format("\t\t\treturn visitor.visit%s(this);\n", parser.className));
         writer.write("\t\t}\n\n");
 
         // toString() method
