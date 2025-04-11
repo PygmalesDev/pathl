@@ -1,4 +1,4 @@
-Literal: Token literal LITERAL
+Literal: Object literal
 Binary: Expression left, Token binaryOperator BINARY_OPERATOR, Expression right
 Unary: Token unaryOperator UNARY_OPERATOR, Expression expression
 Grouping: Expression expression

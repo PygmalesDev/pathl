@@ -68,12 +68,16 @@ public class ErrorLogger {
         if (this.errorCount > 0) System.out.println(red("┛\n"));
     }
 
-    private static String white(Object o) {
+    public static String white(Object o) {
         return String.format("\033[0;97m%s\033[0m", o.toString());
     }
 
-    private static String red(Object o) {
+    public static String red(Object o) {
         return String.format("\033[1;91m%s\033[0m", o.toString());
+    }
+
+    public static String yellow(Object o) {
+        return String.format("\033[1;93m%s\033[0m", o.toString());
     }
 
 }

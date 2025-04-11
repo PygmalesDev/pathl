@@ -72,7 +72,7 @@ public class ExpressionGenerator {
         writer.write(String.format("\tclass %sExpression implements Expression {\n", parser.className));
 
         // Class fields
-        for (String type : parser.fieldTypes) writer.write(String.format("\t\tprivate final %s;\n", type));
+        for (String type : parser.fieldTypes) writer.write(String.format("\t\tpublic final %s;\n", type));
         writer.write("\n");
 
         // Class constructor
@@ -87,9 +87,10 @@ public class ExpressionGenerator {
 
         // toString() method
         writer.write("\t\t@Override\n\t\tpublic String toString() {\n");
-        writer.write(String.format("\t\t\treturn %s;\n\t\t}\n", Arrays.stream(parser.fieldNames)
+        writer.write(String.format("\t\t\treturn \"%s[\" + %s + \"]\";\n\t\t}\n",
+                parser.className, Arrays.stream(parser.fieldNames)
                 .map(name -> String.format("%s.toString()", name))
-                .collect(Collectors.joining(" + \" \" + "))));
+                .collect(Collectors.joining(" + \", \" + "))));
         writer.write("\t}\n\n");
     }
 

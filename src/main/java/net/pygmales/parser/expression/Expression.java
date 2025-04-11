@@ -4,29 +4,34 @@ import net.pygmales.lexer.Token;
 import static net.pygmales.lexer.TokenType.*;
 
 public interface Expression {
-	class LiteralExpression implements Expression {
-		private final Token literal;
+	<R> R accept(ExpressionVisitor<R> visitor);
 
-		public LiteralExpression(Token literal) {
+	class LiteralExpression implements Expression {
+		public final Object literal;
+
+		public LiteralExpression(Object literal) {
 			this.literal = literal;
 		}
 
 		@Override
+		public <R> R accept(ExpressionVisitor<R> visitor) {
+			return visitor.visitLiteral(this);
+		}
+
+		@Override
 		public String toString() {
-			return literal.toString();
+			return "Literal[" + literal.toString() + "]";
 		}
 	}
 
-	static LiteralExpression literal(Token literal) {
-		if (LITERAL_TYPE.contains(literal.type()))
-			return new LiteralExpression(literal);
-		throw new IllegalArgumentException("Provided token of cannot be used in literal expression!");
+	static LiteralExpression literal(Object literal) {
+		return new LiteralExpression(literal);
 	}
 
 	class BinaryExpression implements Expression {
-		private final Expression left;
-		private final Token binaryOperator;
-		private final Expression right;
+		public final Expression left;
+		public final Token binaryOperator;
+		public final Expression right;
 
 		public BinaryExpression(Expression left, Token binaryOperator, Expression right) {
 			this.left = left;
@@ -35,8 +40,13 @@ public interface Expression {
 		}
 
 		@Override
+		public <R> R accept(ExpressionVisitor<R> visitor) {
+			return visitor.visitBinary(this);
+		}
+
+		@Override
 		public String toString() {
-			return left.toString() + " " + binaryOperator.toString() + " " + right.toString();
+			return "Binary[" + left.toString() + ", " + binaryOperator.toString() + ", " + right.toString() + "]";
 		}
 	}
 
@@ -47,8 +57,8 @@ public interface Expression {
 	}
 
 	class UnaryExpression implements Expression {
-		private final Token unaryOperator;
-		private final Expression expression;
+		public final Token unaryOperator;
+		public final Expression expression;
 
 		public UnaryExpression(Token unaryOperator, Expression expression) {
 			this.unaryOperator = unaryOperator;
@@ -56,8 +66,13 @@ public interface Expression {
 		}
 
 		@Override
+		public <R> R accept(ExpressionVisitor<R> visitor) {
+			return visitor.visitUnary(this);
+		}
+
+		@Override
 		public String toString() {
-			return unaryOperator.toString() + " " + expression.toString();
+			return "Unary[" + unaryOperator.toString() + ", " + expression.toString() + "]";
 		}
 	}
 
@@ -68,15 +83,20 @@ public interface Expression {
 	}
 
 	class GroupingExpression implements Expression {
-		private final Expression expression;
+		public final Expression expression;
 
 		public GroupingExpression(Expression expression) {
 			this.expression = expression;
 		}
 
 		@Override
+		public <R> R accept(ExpressionVisitor<R> visitor) {
+			return visitor.visitGrouping(this);
+		}
+
+		@Override
 		public String toString() {
-			return expression.toString();
+			return "Grouping[" + expression.toString() + "]";
 		}
 	}
 
