@@ -1,6 +1,8 @@
-package net.pygmales.parser.expression;
+package net.pygmales.parser;
 
+import net.pygmales.parser.expression.Expression;
 import net.pygmales.parser.expression.Expression.*;
+import net.pygmales.parser.expression.ExpressionVisitor;
 import net.pygmales.util.ErrorLogger;
 
 import java.util.HashSet;
