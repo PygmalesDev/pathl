@@ -9,12 +9,12 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class ExpressionGenerator {
+public class BasicAstGenerator {
     private static final Path EXP_PATH = Path.of("./src/main/java/net/pygmales/parser/expression/Expression.java");
     private static final Path VISITOR_PATH = Path.of("./src/main/java/net/pygmales/parser/expression/ExpressionVisitor.java");
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        URL schemeUrl = ExpressionGenerator.class.getResource("/scheme.exp");
+        URL schemeUrl = BasicAstGenerator.class.getResource("/scheme.exp");
         if (Objects.isNull(schemeUrl)) System.exit(42);
 
         Files.createDirectories(EXP_PATH.getParent());

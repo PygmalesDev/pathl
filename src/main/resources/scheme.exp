@@ -1,4 +1,7 @@
-Literal: Object literal
-Binary: Expression left, Token binaryOperator BINARY_OPERATOR, Expression right
-Unary: Token unaryOperator UNARY_OPERATOR, Expression expression
-Grouping: Expression expression
+root       -> equality
+equality   -> comparison,  (operator, comparison)*
+comparison -> term,        (operator, term)*
+term       -> factor,      (operator, factor)*
+factor     -> factor,      (operator, unary)*
+unary      -> operator,    unary, primary
+primary    -> literal,     expression
