@@ -3,11 +3,8 @@ package net.pygmales.parser.expression;
 import static net.pygmales.parser.expression.Expression.*;
 
 public interface ExpressionVisitor<R> {
-	R visitRoot(RootExpression root);
-	R visitEquality(EqualityExpression equality);
-	R visitComparison(ComparisonExpression comparison);
-	R visitTerm(TermExpression term);
-	R visitFactor(FactorExpression factor);
+	R visitLiteral(LiteralExpression literal);
+	R visitBinary(BinaryExpression binary);
 	R visitUnary(UnaryExpression unary);
-	R visitPrimary(PrimaryExpression primary);
+	R visitGrouping(GroupingExpression grouping);
 }

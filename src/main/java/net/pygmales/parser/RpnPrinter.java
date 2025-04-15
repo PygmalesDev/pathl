@@ -25,13 +25,13 @@ public class RpnPrinter implements ExpressionVisitor<String> {
     public String visitBinary(BinaryExpression binary) {
         binary.right.accept(this);
         binary.left.accept(this);
-        stack.push(binary.binaryOperator.literal().toString());
+        stack.push(binary.operator.literal().toString());
         return null;
     }
 
     @Override
     public String visitUnary(UnaryExpression unary) {
-        stack.push(unary.unaryOperator.literal().toString());
+        stack.push(unary.operator.literal().toString());
         unary.expression.accept(this);
         return null;
     }

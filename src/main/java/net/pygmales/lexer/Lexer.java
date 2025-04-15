@@ -23,12 +23,13 @@ public class Lexer {
     private int line = 1;
 
     public Lexer(String source) {
-        this("nil.ptl", source);
+        this(new ErrorLogger("interactive"), source);
     }
 
-    public Lexer(String fileName, String source) {
+    public Lexer(ErrorLogger logger, String source) {
         this.source = source;
-        this.logger = new ErrorLogger(fileName, source);
+        this.logger = logger;
+        logger.setSource(source);
         if (!source.isEmpty()) this.currentChar = source.charAt(0);
     }
 
@@ -60,7 +61,7 @@ public class Lexer {
         else if (isDigit(this.getChar()))  this.addNumericalToken();
         else if (isQuotes(this.getChar())) this.addStringToken();
         else if (isSlash(this.getChar()))  this.addSlashTokenOrSkipComment();
-        else                                 this.addSymbolicToken();
+        else                               this.addSymbolicToken();
     }
 
     private void addSlashTokenOrSkipComment() {

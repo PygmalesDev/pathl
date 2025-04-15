@@ -3,13 +3,20 @@ package net.pygmales.util;
 import net.pygmales.lexer.Token;
 
 public class ErrorLogger {
-    private final String[] sourceLines;
+    private String[] sourceLines;
     private final String filename;
     private int errorCount;
 
-    public ErrorLogger(String filename, String source) {
+    public ErrorLogger(String filename) {
         this.filename = filename;
+    }
+
+    public void setSource(String source) {
         this.sourceLines = source.split("\n");
+    }
+
+    public void error(Token token, String errorName, String errorDescription) {
+        this.printError(token, errorName, errorDescription);
     }
 
     public void unclosedString(Token token) {

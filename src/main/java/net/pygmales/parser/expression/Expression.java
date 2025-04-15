@@ -9,137 +9,65 @@ import static net.pygmales.parser.expression.Container.*;
 public interface Expression {
 	<R> R accept(ExpressionVisitor<R> visitor);
 
-	class RootExpression implements Expression {
-		public final EqualityExpression equality;
+	class LiteralExpression implements Expression {
+		public final Object literal;
 
-		public RootExpression(EqualityExpression equality) {
-			this.equality = equality;
+		public LiteralExpression(Object literal) {
+			this.literal = literal;
 		}
 
 		@Override
 		public <R> R accept(ExpressionVisitor<R> visitor) {
-			return visitor.visitRoot(this);
+			return visitor.visitLiteral(this);
 		}
 
 		@Override
 		public String toString() {
-			return "Root[" + equality.toString() + "]";
+			return "Literal[" + literal.toString() + "]";
 		}
 	}
 
-	static RootExpression root(EqualityExpression equality) {
-		return new RootExpression(equality);
+	static LiteralExpression literal(Object literal) {
+		return new LiteralExpression(literal);
 	}
 
-	class EqualityExpression implements Expression {
-		public final ComparisonExpression comparison;
-		public final List<OperatorComparisonContainer> operatorComparisonContainers;
+	class BinaryExpression implements Expression {
+		public final Expression left;
+		public final Token operator;
+		public final Expression right;
 
-		public EqualityExpression(ComparisonExpression comparison, List<OperatorComparisonContainer> operatorComparisonContainers) {
-			this.comparison = comparison;
-			this.operatorComparisonContainers = operatorComparisonContainers;
+		public BinaryExpression(Expression left, Token operator, Expression right) {
+			this.left = left;
+			this.operator = operator;
+			this.right = right;
 		}
 
 		@Override
 		public <R> R accept(ExpressionVisitor<R> visitor) {
-			return visitor.visitEquality(this);
+			return visitor.visitBinary(this);
 		}
 
 		@Override
 		public String toString() {
-			return "Equality[" + comparison.toString() + ", "
-					 + operatorComparisonContainers.toString() + "]";
+			return "Binary[" + left.toString() + ", "
+					 + operator.toString() + ", "
+					 + right.toString() + "]";
 		}
 	}
 
-	static EqualityExpression equality(ComparisonExpression comparison, List<OperatorComparisonContainer> operatorComparisonContainers) {
-		return new EqualityExpression(comparison, operatorComparisonContainers);
-	}
-
-	class ComparisonExpression implements Expression {
-		public final TermExpression term;
-		public final List<OperatorTermContainer> operatorTermContainers;
-
-		public ComparisonExpression(TermExpression term, List<OperatorTermContainer> operatorTermContainers) {
-			this.term = term;
-			this.operatorTermContainers = operatorTermContainers;
-		}
-
-		@Override
-		public <R> R accept(ExpressionVisitor<R> visitor) {
-			return visitor.visitComparison(this);
-		}
-
-		@Override
-		public String toString() {
-			return "Comparison[" + term.toString() + ", "
-					 + operatorTermContainers.toString() + "]";
-		}
-	}
-
-	static ComparisonExpression comparison(TermExpression term, List<OperatorTermContainer> operatorTermContainers) {
-		return new ComparisonExpression(term, operatorTermContainers);
-	}
-
-	class TermExpression implements Expression {
-		public final FactorExpression factor;
-		public final List<OperatorFactorContainer> operatorFactorContainers;
-
-		public TermExpression(FactorExpression factor, List<OperatorFactorContainer> operatorFactorContainers) {
-			this.factor = factor;
-			this.operatorFactorContainers = operatorFactorContainers;
-		}
-
-		@Override
-		public <R> R accept(ExpressionVisitor<R> visitor) {
-			return visitor.visitTerm(this);
-		}
-
-		@Override
-		public String toString() {
-			return "Term[" + factor.toString() + ", "
-					 + operatorFactorContainers.toString() + "]";
-		}
-	}
-
-	static TermExpression term(FactorExpression factor, List<OperatorFactorContainer> operatorFactorContainers) {
-		return new TermExpression(factor, operatorFactorContainers);
-	}
-
-	class FactorExpression implements Expression {
-		public final FactorExpression factor;
-		public final List<OperatorUnaryContainer> operatorUnaryContainers;
-
-		public FactorExpression(FactorExpression factor, List<OperatorUnaryContainer> operatorUnaryContainers) {
-			this.factor = factor;
-			this.operatorUnaryContainers = operatorUnaryContainers;
-		}
-
-		@Override
-		public <R> R accept(ExpressionVisitor<R> visitor) {
-			return visitor.visitFactor(this);
-		}
-
-		@Override
-		public String toString() {
-			return "Factor[" + factor.toString() + ", "
-					 + operatorUnaryContainers.toString() + "]";
-		}
-	}
-
-	static FactorExpression factor(FactorExpression factor, List<OperatorUnaryContainer> operatorUnaryContainers) {
-		return new FactorExpression(factor, operatorUnaryContainers);
+	static BinaryExpression binary(Expression left, Token operator, Expression right) {
+		if (BINARY_OPERATOR_TYPE.contains(operator.type()))
+			return new BinaryExpression(left, operator, right);
+		throw new IllegalArgumentException("Provided token cannot be used in literal expression!");
 	}
 
 	class UnaryExpression implements Expression {
 		public final Token operator;
-		public final UnaryExpression unary;
-		public final PrimaryExpression primary;
+		public final Expression expression;
 
-		public UnaryExpression(Token operator, UnaryExpression unary, PrimaryExpression primary) {
+		public UnaryExpression(Token operator, Expression expression) {
 			this.operator = operator;
-			this.unary = unary;
-			this.primary = primary;
+			this.expression = expression;
 		}
 
 		@Override
@@ -150,40 +78,36 @@ public interface Expression {
 		@Override
 		public String toString() {
 			return "Unary[" + operator.toString() + ", "
-					 + unary.toString() + ", "
-					 + primary.toString() + "]";
+					 + expression.toString() + "]";
 		}
 	}
 
-	static UnaryExpression unary(Token operator, UnaryExpression unary, PrimaryExpression primary) {
+	static UnaryExpression unary(Token operator, Expression expression) {
 		if (UNARY_OPERATOR_TYPE.contains(operator.type()))
-			return new UnaryExpression(operator, unary, primary);
+			return new UnaryExpression(operator, expression);
 		throw new IllegalArgumentException("Provided token cannot be used in literal expression!");
 	}
 
-	class PrimaryExpression implements Expression {
-		public final Object literal;
+	class GroupingExpression implements Expression {
 		public final Expression expression;
 
-		public PrimaryExpression(Object literal, Expression expression) {
-			this.literal = literal;
+		public GroupingExpression(Expression expression) {
 			this.expression = expression;
 		}
 
 		@Override
 		public <R> R accept(ExpressionVisitor<R> visitor) {
-			return visitor.visitPrimary(this);
+			return visitor.visitGrouping(this);
 		}
 
 		@Override
 		public String toString() {
-			return "Primary[" + literal.toString() + ", "
-					 + expression.toString() + "]";
+			return "Grouping[" + expression.toString() + "]";
 		}
 	}
 
-	static PrimaryExpression primary(Object literal, Expression expression) {
-		return new PrimaryExpression(literal, expression);
+	static GroupingExpression grouping(Expression expression) {
+		return new GroupingExpression(expression);
 	}
 
 }

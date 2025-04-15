@@ -1,9 +1,6 @@
 package net.pygmales.util;
 
-import java.io.BufferedReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -24,6 +21,7 @@ public class AstGenerator {
     private static final String EXPRESSION = "Expression";
 
     private static final Map<String, List<String>> CONTAINERS = new HashMap<>();
+    private static final List<String> EXPRESSION_TYPES = new ArrayList<>();
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         URL schemeUrl = AstGenerator.class.getResource("/scheme.exp");
@@ -48,15 +46,11 @@ public class AstGenerator {
         cont_writer.write("public interface Container {\n");
         visitor_writer.write("public interface ExpressionVisitor<R> {\n");
 
-        for (String line : reader.lines().toList()) {
-            if (line.isEmpty()) continue;
-
-            SchemeParser parser = new SchemeParser(line);
+        for (SchemeParser parser : generateParsers(reader)) {
             addVisitMethod(visitor_writer, parser);
             addExpressionClass(exp_writer, parser);
             addExpressionFactory(exp_writer, parser);
         }
-        reader.close();
 
         addContainers(cont_writer);
 
@@ -67,6 +61,17 @@ public class AstGenerator {
         visitor_writer.close();
         cont_writer.close();
         exp_writer.close();
+    }
+
+    private static List<SchemeParser> generateParsers(BufferedReader reader) throws IOException {
+        List<SchemeParser> parsers = new ArrayList<>();
+        for (String line : reader.lines().toList()) {
+            if (line.isEmpty()) continue;
+            parsers.add(new SchemeParser(line));
+            EXPRESSION_TYPES.add(parsers.getLast().className);
+        }
+
+        return parsers;
     }
 
     private static void addExpressionInterfaceFields(FileWriter writer) throws IOException {
@@ -182,7 +187,9 @@ public class AstGenerator {
             case EXPRESSION -> "Expression expression";
             case OPERATOR -> "Token operator";
             case LITERAL -> "Object literal";
-            default -> String.format("%sExpression %s", field, field.toLowerCase());
+            default -> EXPRESSION_TYPES.contains(field) ?
+                    String.format("%sExpression %s", field, field.toLowerCase())
+                    : String.format("Expression %s", field.toLowerCase());
         };
     }
 

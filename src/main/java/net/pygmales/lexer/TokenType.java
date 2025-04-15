@@ -26,11 +26,15 @@ public enum TokenType {
 
     private final String str;
 
-    public static final List<TokenType> LITERAL_TYPE = List.of(NUMBER, STRING, TRUE, FALSE, NULL);
     public static final List<TokenType> BINARY_OPERATOR_TYPE = List.of(
             EQUAL_EQUAL, NOT_EQUAL, LESS, LESS_EQUAL,
             GREATER, GREATER_EQUAL, PLUS, MINUS, STAR, SLASH);
     public static final List<TokenType> UNARY_OPERATOR_TYPE = List.of(MINUS, NOT);
+    public static final List<TokenType> EQUALITY_OPERATOR_TYPE = List.of(EQUAL_EQUAL, NOT_EQUAL);
+    public static final List<TokenType> COMPARISON_OPERATOR_TYPE = List.of(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL);
+    public static final List<TokenType> TERM_OPERATOR_TYPE = List.of(PLUS, MINUS);
+    public static final List<TokenType> FACTOR_OPERATOR_TYPE = List.of(SLASH, STAR);
+    public static final List<TokenType> PRIMARY_OPERATOR_TYPE = List.of(FALSE, TRUE, NULL, NUMBER, STRING);
 
     TokenType(String str) {
         this.str = str;

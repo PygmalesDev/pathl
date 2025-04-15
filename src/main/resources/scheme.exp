@@ -1,7 +1,4 @@
-root       -> equality
-equality   -> comparison,  (operator, comparison)*
-comparison -> term,        (operator, term)*
-term       -> factor,      (operator, factor)*
-factor     -> factor,      (operator, unary)*
-unary      -> operator,    unary, primary
-primary    -> literal,     expression
+literal -> literal
+binary -> left, operator, right
+unary -> operator, expression
+grouping -> expression

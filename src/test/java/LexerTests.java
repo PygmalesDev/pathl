@@ -1,5 +1,6 @@
 import net.pygmales.lexer.Lexer;
 import net.pygmales.lexer.Token;
+import net.pygmales.util.ErrorLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Lexer tests")
 public class LexerTests {
-
     @Test
     @DisplayName("Empty input")
     public void testEmptyInput() {

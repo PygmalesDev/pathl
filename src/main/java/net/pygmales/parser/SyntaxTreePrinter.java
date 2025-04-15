@@ -27,13 +27,13 @@ public class SyntaxTreePrinter implements ExpressionVisitor<String> {
     public String visitBinary(BinaryExpression binary) {
         this.binaryAtLevel.add(++this.depth);
         this.isBinary = true;
-        return this.nest(binary.binaryOperator.literal().toString(), binary.left, binary.right);
+        return this.nest(binary.operator.literal().toString(), binary.left, binary.right);
     }
 
     @Override
     public String visitUnary(UnaryExpression unary) {
         this.depth++;
-        return this.nest(unary.unaryOperator.literal().toString(), unary.expression);
+        return this.nest(unary.operator.literal().toString(), unary.expression);
     }
 
     @Override
