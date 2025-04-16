@@ -38,7 +38,7 @@ public class Lexer {
             this.scanNextToken();
             this.isFaultyToken();
         }
-        this.tokens.add(Token.EOF);
+        this.addToken(EOF, "eof");
         this.logger.close();
         return this.tokens;
     }

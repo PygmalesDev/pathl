@@ -13,6 +13,7 @@ public class ErrorLogger {
 
     public void setSource(String source) {
         this.sourceLines = source.split("\n");
+        this.errorCount = 0;
     }
 
     public void error(Token token, String errorName, String errorDescription) {
